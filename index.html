@@ -27,15 +27,29 @@
   header {
     background: transparent;
     color: #fff;
-    padding: 24px 20px;
-    text-align: center;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
   }
-  header h1 { margin: 0; font-size: 26px; font-weight: 600; }
-  header p { margin: 6px 0 0; font-size: 15px; opacity: 0.92; }
+  #brand { display: flex; align-items: center; gap: 14px; }
+  #logoImg {
+    height: 52px; width: 52px; object-fit: cover;
+    border-radius: 10px; border: 2px solid rgba(255,255,255,0.6); background: #fff;
+  }
+  header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+  header p { margin: 4px 0 0; font-size: 14px; opacity: 0.92; }
+  #userbar { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+  #userbar button {
+    background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.5);
+  }
+  #userbar button:hover { background: rgba(255,255,255,0.32); }
   main {
     max-width: 920px;
     margin: 0 auto;
-    padding: 24px 20px 60px;
+    padding: 12px 20px 60px;
   }
   .card {
     background: var(--surface);
@@ -80,6 +94,7 @@
     transition: background 0.15s;
   }
   button:hover { background: #f0eee8; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   button.primary:hover { background: var(--accent-dark); }
   button.danger { color: #a32d2d; }
@@ -103,7 +118,6 @@
   .chip .load { cursor: pointer; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
   .empty { color: var(--text-muted); font-size: 14px; font-style: italic; }
-  footer { text-align: center; color: var(--text-muted); font-size: 13px; padding: 0 20px 30px; }
   /* group color ramps */
   .c0 { background:#EEEDFE; border-color:#CECBF6; color:#26215C; }
   .c1 { background:#E1F5EE; border-color:#9FE1CB; color:#04342C; }
@@ -112,58 +126,366 @@
   .c4 { background:#E6F1FB; border-color:#B5D4F4; color:#042C53; }
   .c5 { background:#EAF3DE; border-color:#C0DD97; color:#173404; }
   .c6 { background:#FAEEDA; border-color:#FAC775; color:#412402; }
+  /* auth */
+  .auth-card { max-width: 420px; margin: 30px auto; }
+  .auth-card h2 { margin: 0 0 14px; font-size: 20px; }
+  .auth-field { margin-bottom: 14px; }
+  .auth-field input { width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; }
+  .auth-error { color: #a32d2d; font-size: 14px; min-height: 18px; margin: 0 0 8px; }
+  .auth-note { font-size: 13px; color: var(--text-muted); background: #f3f1ea; border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; }
+  .auth-switch { margin-top: 16px; font-size: 14px; color: var(--text-muted); }
+  .auth-switch a { color: var(--accent); cursor: pointer; text-decoration: underline; }
+  /* admin */
+  .section-title { font-size: 17px; font-weight: 600; margin: 0 0 12px; }
+  .admin-user {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .admin-user:last-child { border-bottom: none; }
+  .admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; background:#EEEDFE; color:#26215C; margin-left: 8px; }
+  .field-inline { margin-bottom: 14px; }
+  .field-inline input[type="text"] { width: 100%; max-width: 420px; padding: 9px 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; }
+  #adminLogoPreview { height: 64px; width: 64px; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); margin-right: 12px; vertical-align: middle; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Groepsverdeler</h1>
-  <p>Eerlijk en willekeurig groepen maken — zonder discussie</p>
+  <div id="brand">
+    <img id="logoImg" alt="logo" hidden>
+    <div>
+      <h1 id="appTitle">Groepsverdeler</h1>
+      <p id="appSubtitle">Eerlijk en willekeurig groepen maken — zonder discussie</p>
+    </div>
+  </div>
+  <div id="userbar" hidden>
+    <span id="whoami"></span>
+    <button id="adminBtn" hidden>Beheer</button>
+    <button id="logoutBtn">Uitloggen</button>
+  </div>
 </header>
 <main>
-  <div class="card">
-    <label for="names">Namen (één per regel of gescheiden door komma's)</label>
-    <textarea id="names" placeholder="Anna&#10;Bram&#10;Charlotte&#10;David&#10;..."></textarea>
 
-    <div class="controls">
-      <div class="control-group">
-        <label for="mode">Verdelen op</label>
-        <select id="mode">
-          <option value="groups">Aantal groepen</option>
-          <option value="size">Personen per groep</option>
-        </select>
+  <!-- ===== LOGIN / REGISTRATIE ===== -->
+  <div class="card auth-card" id="authScreen">
+    <h2 id="authTitle">Inloggen</h2>
+    <div class="auth-note" id="authNote" hidden></div>
+
+    <!-- Inloggen -->
+    <div id="loginForm">
+      <div class="auth-error" id="loginError"></div>
+      <div class="auth-field">
+        <label for="loginUser">Gebruikersnaam</label>
+        <input type="text" id="loginUser" autocomplete="username">
       </div>
-      <div class="control-group">
-        <label for="count" id="countLabel">Aantal groepen</label>
-        <input type="number" id="count" min="1" value="2">
+      <div class="auth-field">
+        <label for="loginPass">Wachtwoord</label>
+        <input type="password" id="loginPass" autocomplete="current-password">
       </div>
-      <button class="primary" id="go">Verdeel ↻</button>
+      <button class="primary" id="loginBtn">Inloggen</button>
+      <div class="auth-switch" id="toRegister">Nog geen account? <a>Maak er een aan</a></div>
     </div>
 
-    <div class="row">
-      <input type="text" id="listName" placeholder="Naam van de klaslijst" style="padding:9px 12px;font-size:15px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
-      <button id="save">Lijst opslaan</button>
+    <!-- Account aanmaken -->
+    <div id="registerForm" hidden>
+      <div class="auth-error" id="registerError"></div>
+      <div class="auth-field">
+        <label for="regUser">Gebruikersnaam</label>
+        <input type="text" id="regUser" autocomplete="username">
+      </div>
+      <div class="auth-field">
+        <label for="regPass">Wachtwoord (min. 4 tekens)</label>
+        <input type="password" id="regPass" autocomplete="new-password">
+      </div>
+      <div class="auth-field">
+        <label for="regPass2">Wachtwoord herhalen</label>
+        <input type="password" id="regPass2" autocomplete="new-password">
+      </div>
+      <button class="primary" id="registerBtn">Account aanmaken</button>
+      <div class="auth-switch" id="toLogin">Heb je al een account? <a>Inloggen</a></div>
     </div>
-    <div class="saved-list" id="savedList"></div>
   </div>
 
-  <div class="card">
-    <div class="meta" id="meta">Voer namen in en klik op <strong>Verdeel</strong>.</div>
-    <div class="groups" id="result"></div>
+  <!-- ===== APP ===== -->
+  <div id="appScreen" hidden>
+    <div class="card">
+      <label for="names">Namen (één per regel of gescheiden door komma's)</label>
+      <textarea id="names" placeholder="Anna&#10;Bram&#10;Charlotte&#10;David&#10;..."></textarea>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="mode">Verdelen op</label>
+          <select id="mode">
+            <option value="groups">Aantal groepen</option>
+            <option value="size">Personen per groep</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="count" id="countLabel">Aantal groepen</label>
+          <input type="number" id="count" min="1" value="2">
+        </div>
+        <button class="primary" id="go">Verdeel ↻</button>
+      </div>
+
+      <div class="row">
+        <input type="text" id="listName" placeholder="Naam van de klaslijst" style="padding:9px 12px;font-size:15px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+        <button id="save">Lijst opslaan</button>
+      </div>
+      <div class="saved-list" id="savedList"></div>
+    </div>
+
+    <div class="card">
+      <div class="meta" id="meta">Voer namen in en klik op <strong>Verdeel</strong>.</div>
+      <div class="groups" id="result"></div>
+    </div>
   </div>
+
+  <!-- ===== ADMIN ===== -->
+  <div id="adminScreen" hidden>
+    <div class="card">
+      <div class="row" style="margin-top:0;justify-content:space-between;">
+        <h2 style="margin:0;font-size:20px;">Beheer</h2>
+        <button id="backToApp">← Terug naar app</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Uiterlijk</div>
+      <div class="field-inline">
+        <label for="setTitle">Titel</label>
+        <input type="text" id="setTitle">
+      </div>
+      <div class="field-inline">
+        <label for="setSubtitle">Ondertitel</label>
+        <input type="text" id="setSubtitle">
+      </div>
+      <div class="field-inline">
+        <label>Logo / foto</label>
+        <img id="adminLogoPreview" alt="logo" hidden>
+        <input type="file" id="logoFile" accept="image/*">
+        <button id="removeLogo" class="danger" style="margin-left:8px;">Verwijderen</button>
+        <div class="meta" style="margin-top:8px;">Kies een afbeelding kleiner dan 1 MB. Ze verschijnt links bovenaan.</div>
+      </div>
+      <button class="primary" id="saveSettings">Opslaan</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Gebruikers</div>
+      <div id="userList"></div>
+    </div>
+  </div>
+
 </main>
-<footer>Groepsverdeler · v1.0.0</footer>
 
 <script>
 (function(){
-  var STORAGE_KEY = "groepsverdeler_lijsten_v1";
-  var namesEl = document.getElementById("names");
-  var modeEl = document.getElementById("mode");
-  var countEl = document.getElementById("count");
-  var countLabel = document.getElementById("countLabel");
-  var metaEl = document.getElementById("meta");
-  var resultEl = document.getElementById("result");
-  var listNameEl = document.getElementById("listName");
-  var savedListEl = document.getElementById("savedList");
+  var USERS_KEY    = "groepsverdeler_users_v1";
+  var SESSION_KEY  = "groepsverdeler_session_v1";
+  var SETTINGS_KEY = "groepsverdeler_settings_v1";
+  var STORAGE_KEY  = "groepsverdeler_lijsten_v1";
+
+  var DEFAULT_TITLE = "Groepsverdeler";
+  var DEFAULT_SUBTITLE = "Eerlijk en willekeurig groepen maken — zonder discussie";
+
+  function $(id){ return document.getElementById(id); }
+
+  /* ---------- opslag-helpers ---------- */
+  function getUsers(){ try { return JSON.parse(localStorage.getItem(USERS_KEY)) || {}; } catch(e){ return {}; } }
+  function setUsers(o){ try { localStorage.setItem(USERS_KEY, JSON.stringify(o)); } catch(e){} }
+  function getSettings(){ try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch(e){ return {}; } }
+  function setSettings(o){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(o)); } catch(e){} }
+  function currentUser(){ return localStorage.getItem(SESSION_KEY); }
+  function setSession(u){ localStorage.setItem(SESSION_KEY, u); }
+  function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+  function isAdmin(u){ var us = getUsers(); return !!(us[u] && us[u].role === "admin"); }
+
+  // Lichte hash — GEEN echte beveiliging, alleen om wachtwoorden niet als platte tekst te bewaren.
+  function hashPw(pw){
+    var h = 5381;
+    for (var i=0; i<pw.length; i++){ h = (((h<<5)+h) ^ pw.charCodeAt(i)) >>> 0; }
+    return h.toString(16);
+  }
+
+  /* ---------- uiterlijk toepassen ---------- */
+  function applySettings(){
+    var s = getSettings();
+    $("appTitle").textContent = s.title || DEFAULT_TITLE;
+    $("appSubtitle").textContent = s.subtitle || DEFAULT_SUBTITLE;
+    document.title = s.title || DEFAULT_TITLE;
+    var img = $("logoImg");
+    if (s.logo){ img.src = s.logo; img.hidden = false; }
+    else { img.hidden = true; img.removeAttribute("src"); }
+  }
+
+  /* ---------- navigatie ---------- */
+  function route(){
+    applySettings();
+    var u = currentUser();
+    var users = getUsers();
+    if (u && !users[u]){ clearSession(); u = null; }   // account verdween → uitloggen
+
+    if (!u){
+      $("authScreen").hidden = false;
+      $("appScreen").hidden = true;
+      $("adminScreen").hidden = true;
+      $("userbar").hidden = true;
+      renderAuth();
+      return;
+    }
+
+    $("authScreen").hidden = true;
+    $("userbar").hidden = false;
+    $("whoami").textContent = "Ingelogd als " + u;
+    $("adminBtn").hidden = !isAdmin(u);
+    showApp();
+  }
+  function showApp(){
+    $("appScreen").hidden = false;
+    $("adminScreen").hidden = true;
+    renderSaved();
+  }
+  function showAdmin(){
+    if (!isAdmin(currentUser())) return;
+    $("appScreen").hidden = true;
+    $("adminScreen").hidden = false;
+    renderAdmin();
+  }
+
+  /* ---------- login / registratie ---------- */
+  function renderAuth(){
+    var firstRun = Object.keys(getUsers()).length === 0;
+    if (firstRun){
+      $("authTitle").textContent = "Eerste account aanmaken";
+      $("authNote").hidden = false;
+      $("authNote").textContent = "Dit is het eerste account en wordt automatisch de beheerder (admin).";
+      $("loginForm").hidden = true;
+      $("registerForm").hidden = false;
+      $("toLogin").hidden = true;       // niets om naar terug te gaan
+    } else {
+      $("authNote").hidden = true;
+      $("toLogin").hidden = false;
+      showLogin();
+    }
+  }
+  function showLogin(){
+    $("authTitle").textContent = "Inloggen";
+    $("loginForm").hidden = false;
+    $("registerForm").hidden = true;
+    $("loginError").textContent = "";
+  }
+  function showRegister(){
+    $("authTitle").textContent = "Account aanmaken";
+    $("loginForm").hidden = true;
+    $("registerForm").hidden = false;
+    $("registerError").textContent = "";
+  }
+
+  function doLogin(){
+    var u = $("loginUser").value.trim();
+    var p = $("loginPass").value;
+    var users = getUsers();
+    if (!u || !users[u] || users[u].hash !== hashPw(p)){
+      $("loginError").textContent = "Onjuiste gebruikersnaam of wachtwoord.";
+      return;
+    }
+    setSession(u);
+    $("loginUser").value = ""; $("loginPass").value = "";
+    route();
+  }
+  function doRegister(){
+    var u = $("regUser").value.trim();
+    var p = $("regPass").value;
+    var p2 = $("regPass2").value;
+    var err = $("registerError");
+    err.textContent = "";
+    if (!u){ err.textContent = "Kies een gebruikersnaam."; return; }
+    if (p.length < 4){ err.textContent = "Het wachtwoord moet minstens 4 tekens hebben."; return; }
+    if (p !== p2){ err.textContent = "De wachtwoorden komen niet overeen."; return; }
+    var users = getUsers();
+    if (users[u]){ err.textContent = "Die gebruikersnaam bestaat al."; return; }
+    var firstRun = Object.keys(users).length === 0;
+    users[u] = { hash: hashPw(p), role: firstRun ? "admin" : "user" };
+    setUsers(users);
+    setSession(u);
+    $("regUser").value = ""; $("regPass").value = ""; $("regPass2").value = "";
+    route();
+  }
+
+  /* ---------- admin ---------- */
+  function renderAdmin(){
+    var s = getSettings();
+    $("setTitle").value = s.title || DEFAULT_TITLE;
+    $("setSubtitle").value = s.subtitle || DEFAULT_SUBTITLE;
+    var prev = $("adminLogoPreview");
+    if (s.logo){ prev.src = s.logo; prev.hidden = false; }
+    else { prev.hidden = true; prev.removeAttribute("src"); }
+
+    var users = getUsers();
+    var me = currentUser();
+    var list = $("userList");
+    list.innerHTML = "";
+    Object.keys(users).forEach(function(name){
+      var row = document.createElement("div");
+      row.className = "admin-user";
+
+      var left = document.createElement("div");
+      var nameSpan = document.createElement("span");
+      nameSpan.textContent = name;
+      left.appendChild(nameSpan);
+      if (users[name].role === "admin"){
+        var badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = "beheerder";
+        left.appendChild(badge);
+      }
+
+      var actions = document.createElement("div");
+      actions.className = "admin-actions";
+
+      var resetBtn = document.createElement("button");
+      resetBtn.textContent = "Wachtwoord resetten";
+      resetBtn.addEventListener("click", function(){
+        var np = prompt('Nieuw wachtwoord voor "' + name + '":');
+        if (np === null) return;
+        if (np.length < 4){ alert("Het wachtwoord moet minstens 4 tekens hebben."); return; }
+        var us = getUsers();
+        us[name].hash = hashPw(np);
+        setUsers(us);
+        alert('Het wachtwoord van "' + name + '" is opnieuw ingesteld.');
+      });
+      actions.appendChild(resetBtn);
+
+      var delBtn = document.createElement("button");
+      delBtn.className = "danger";
+      delBtn.textContent = "Verwijderen";
+      if (name === me){
+        delBtn.disabled = true;
+        delBtn.title = "Je kunt je eigen account niet verwijderen.";
+      }
+      delBtn.addEventListener("click", function(){
+        if (!confirm('Account "' + name + '" verwijderen?')) return;
+        var us = getUsers();
+        delete us[name];
+        setUsers(us);
+        renderAdmin();
+      });
+      actions.appendChild(delBtn);
+
+      row.appendChild(left);
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+  }
+
+  /* ---------- groepen verdelen ---------- */
+  var namesEl = $("names");
+  var modeEl = $("mode");
+  var countEl = $("count");
+  var countLabel = $("countLabel");
+  var metaEl = $("meta");
+  var resultEl = $("result");
+  var listNameEl = $("listName");
+  var savedListEl = $("savedList");
 
   modeEl.addEventListener("change", function(){
     countLabel.textContent = modeEl.value === "groups" ? "Aantal groepen" : "Personen per groep";
@@ -203,15 +525,16 @@
       h.textContent = "Groep " + (idx+1) + " (" + members.length + ")";
       div.appendChild(h);
       members.forEach(function(m){
-        var row = document.createElement("div");
-        row.className = "member";
-        row.textContent = m;
-        div.appendChild(row);
+        var rowm = document.createElement("div");
+        rowm.className = "member";
+        rowm.textContent = m;
+        div.appendChild(rowm);
       });
       resultEl.appendChild(div);
     });
   }
 
+  /* ---------- opgeslagen klaslijsten ---------- */
   function getSaved(){
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
     catch(e){ return {}; }
@@ -253,8 +576,51 @@
     });
   }
 
-  document.getElementById("go").addEventListener("click", distribute);
-  document.getElementById("save").addEventListener("click", function(){
+  /* ---------- gebeurtenissen koppelen ---------- */
+  $("loginBtn").addEventListener("click", doLogin);
+  $("loginPass").addEventListener("keydown", function(e){ if (e.key === "Enter") doLogin(); });
+  $("registerBtn").addEventListener("click", doRegister);
+  $("regPass2").addEventListener("keydown", function(e){ if (e.key === "Enter") doRegister(); });
+  $("toRegister").querySelector("a").addEventListener("click", showRegister);
+  $("toLogin").querySelector("a").addEventListener("click", showLogin);
+
+  $("logoutBtn").addEventListener("click", function(){ clearSession(); route(); });
+  $("adminBtn").addEventListener("click", showAdmin);
+  $("backToApp").addEventListener("click", showApp);
+
+  $("saveSettings").addEventListener("click", function(){
+    var s = getSettings();
+    s.title = $("setTitle").value.trim() || DEFAULT_TITLE;
+    s.subtitle = $("setSubtitle").value.trim();
+    setSettings(s);
+    applySettings();
+    alert("Opgeslagen.");
+  });
+  $("logoFile").addEventListener("change", function(){
+    var f = this.files[0];
+    if (!f) return;
+    if (f.size > 1024*1024){ alert("Kies een afbeelding kleiner dan 1 MB."); this.value = ""; return; }
+    var reader = new FileReader();
+    reader.onload = function(){
+      var s = getSettings();
+      s.logo = reader.result;
+      setSettings(s);
+      applySettings();
+      renderAdmin();
+    };
+    reader.readAsDataURL(f);
+    this.value = "";
+  });
+  $("removeLogo").addEventListener("click", function(){
+    var s = getSettings();
+    delete s.logo;
+    setSettings(s);
+    applySettings();
+    renderAdmin();
+  });
+
+  $("go").addEventListener("click", distribute);
+  $("save").addEventListener("click", function(){
     var name = (listNameEl.value || "").trim();
     var content = namesEl.value.trim();
     if (!name){ alert("Geef de klaslijst eerst een naam."); return; }
@@ -265,7 +631,8 @@
     renderSaved();
   });
 
-  renderSaved();
+  /* ---------- start ---------- */
+  route();
 })();
 </script>
 </body>
