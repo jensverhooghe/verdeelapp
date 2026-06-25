@@ -284,6 +284,10 @@
   var SETTINGS_KEY = "groepsverdeler_settings_v1";
   var STORAGE_KEY  = "groepsverdeler_lijsten_v1";
 
+  // Vaste beheerder: enkel dit account is admin, op elk toestel.
+  var ADMIN_USER = "jensatlas";
+  var ADMIN_PASS = "Atlascopco2026";
+
   var DEFAULT_TITLE = "Groepsverdeler";
   var DEFAULT_SUBTITLE = "Eerlijk en willekeurig groepen maken — zonder discussie";
 
@@ -297,7 +301,7 @@
   function currentUser(){ return localStorage.getItem(SESSION_KEY); }
   function setSession(u){ localStorage.setItem(SESSION_KEY, u); }
   function clearSession(){ localStorage.removeItem(SESSION_KEY); }
-  function isAdmin(u){ var us = getUsers(); return !!(us[u] && us[u].role === "admin"); }
+  function isAdmin(u){ return u === ADMIN_USER; }
 
   // Lichte hash — GEEN echte beveiliging, alleen om wachtwoorden niet als platte tekst te bewaren.
   function hashPw(pw){
@@ -322,7 +326,7 @@
     applySettings();
     var u = currentUser();
     var users = getUsers();
-    if (u && !users[u]){ clearSession(); u = null; }   // account verdween → uitloggen
+    if (u && u !== ADMIN_USER && !users[u]){ clearSession(); u = null; }   // account verdween → uitloggen
 
     if (!u){
       $("authScreen").hidden = false;
@@ -353,19 +357,9 @@
 
   /* ---------- login / registratie ---------- */
   function renderAuth(){
-    var firstRun = Object.keys(getUsers()).length === 0;
-    if (firstRun){
-      $("authTitle").textContent = "Eerste account aanmaken";
-      $("authNote").hidden = false;
-      $("authNote").textContent = "Dit is het eerste account en wordt automatisch de beheerder (admin).";
-      $("loginForm").hidden = true;
-      $("registerForm").hidden = false;
-      $("toLogin").hidden = true;       // niets om naar terug te gaan
-    } else {
-      $("authNote").hidden = true;
-      $("toLogin").hidden = false;
-      showLogin();
-    }
+    $("authNote").hidden = true;
+    $("toLogin").hidden = false;
+    showLogin();
   }
   function showLogin(){
     $("authTitle").textContent = "Inloggen";
@@ -383,6 +377,13 @@
   function doLogin(){
     var u = $("loginUser").value.trim();
     var p = $("loginPass").value;
+    if (u === ADMIN_USER){
+      if (p !== ADMIN_PASS){ $("loginError").textContent = "Onjuiste gebruikersnaam of wachtwoord."; return; }
+      setSession(u);
+      $("loginUser").value = ""; $("loginPass").value = "";
+      route();
+      return;
+    }
     var users = getUsers();
     if (!u || !users[u] || users[u].hash !== hashPw(p)){
       $("loginError").textContent = "Onjuiste gebruikersnaam of wachtwoord.";
@@ -401,10 +402,10 @@
     if (!u){ err.textContent = "Kies een gebruikersnaam."; return; }
     if (p.length < 4){ err.textContent = "Het wachtwoord moet minstens 4 tekens hebben."; return; }
     if (p !== p2){ err.textContent = "De wachtwoorden komen niet overeen."; return; }
+    if (u.toLowerCase() === ADMIN_USER.toLowerCase()){ err.textContent = "Die gebruikersnaam is gereserveerd."; return; }
     var users = getUsers();
     if (users[u]){ err.textContent = "Die gebruikersnaam bestaat al."; return; }
-    var firstRun = Object.keys(users).length === 0;
-    users[u] = { hash: hashPw(p), role: firstRun ? "admin" : "user" };
+    users[u] = { hash: hashPw(p), role: "user" };
     setUsers(users);
     setSession(u);
     $("regUser").value = ""; $("regPass").value = ""; $("regPass2").value = "";
