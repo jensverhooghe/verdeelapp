@@ -1,5 +1,7 @@
 # Groepsverdeler
 
+**Versie: 1.0.0**
+
 Een eenvoudige webapp die een lijst met namen eerlijk en willekeurig over groepen verdeelt. Bedoeld voor leerkrachten die snel klasgroepen willen samenstellen — zonder discussie en zonder gedoe.
 
 ## Wat het doet
