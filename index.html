@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Groepsverdeler</title>
+<style>
+  :root {
+    --accent: #2E75B6;
+    --accent-dark: #1d5689;
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --border: #e3e1d8;
+    --text: #2c2c2a;
+    --text-muted: #75736c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 26px; font-weight: 600; }
+  header p { margin: 6px 0 0; font-size: 15px; opacity: 0.92; }
+  main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  label { display: block; font-size: 14px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+  textarea {
+    width: 100%;
+    min-height: 150px;
+    resize: vertical;
+    padding: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    line-height: 1.6;
+  }
+  textarea:focus, select:focus, input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-top: 16px; }
+  .control-group { display: flex; flex-direction: column; }
+  select, input[type="number"] {
+    padding: 9px 12px;
+    font-size: 15px;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+  }
+  input[type="number"] { width: 90px; }
+  button {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    padding: 9px 16px;
+    transition: background 0.15s;
+  }
+  button:hover { background: #f0eee8; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover { background: var(--accent-dark); }
+  button.danger { color: #a32d2d; }
+  .meta { font-size: 14px; color: var(--text-muted); margin: 4px 0 16px; }
+  .groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+  .group {
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid transparent;
+  }
+  .group h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+  .group .member { font-size: 15px; padding: 3px 0; }
+  .saved-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff; border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 8px 6px 14px; font-size: 14px;
+  }
+  .chip button { border: none; background: none; padding: 2px 6px; font-size: 16px; line-height: 1; color: var(--text-muted); }
+  .chip button:hover { background: none; color: #a32d2d; }
+  .chip .load { cursor: pointer; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; }
+  .empty { color: var(--text-muted); font-size: 14px; font-style: italic; }
+  /* group color ramps */
+  .c0 { background:#EEEDFE; border-color:#CECBF6; color:#26215C; }
+  .c1 { background:#E1F5EE; border-color:#9FE1CB; color:#04342C; }
+  .c2 { background:#FAECE7; border-color:#F5C4B3; color:#4A1B0C; }
+  .c3 { background:#FBEAF0; border-color:#F4C0D1; color:#4B1528; }
+  .c4 { background:#E6F1FB; border-color:#B5D4F4; color:#042C53; }
+  .c5 { background:#EAF3DE; border-color:#C0DD97; color:#173404; }
+  .c6 { background:#FAEEDA; border-color:#FAC775; color:#412402; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Groepsverdeler</h1>
+  <p>Eerlijk en willekeurig groepen maken — zonder discussie</p>
+</header>
+<main>
+  <div class="card">
+    <label for="names">Namen (één per regel of gescheiden door komma's)</label>
+    <textarea id="names" placeholder="Anna&#10;Bram&#10;Charlotte&#10;David&#10;..."></textarea>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="mode">Verdelen op</label>
+        <select id="mode">
+          <option value="groups">Aantal groepen</option>
+          <option value="size">Personen per groep</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="count" id="countLabel">Aantal groepen</label>
+        <input type="number" id="count" min="1" value="2">
+      </div>
+      <button class="primary" id="go">Verdeel ↻</button>
+    </div>
+
+    <div class="row">
+      <input type="text" id="listName" placeholder="Naam van de klaslijst" style="padding:9px 12px;font-size:15px;border:1px solid var(--border);border-radius:8px;font-family:inherit;">
+      <button id="save">Lijst opslaan</button>
+    </div>
+    <div class="saved-list" id="savedList"></div>
+  </div>
+
+  <div class="card">
+    <div class="meta" id="meta">Voer namen in en klik op <strong>Verdeel</strong>.</div>
+    <div class="groups" id="result"></div>
+  </div>
+</main>
+
+<script>
+(function(){
+  var STORAGE_KEY = "groepsverdeler_lijsten_v1";
+  var namesEl = document.getElementById("names");
+  var modeEl = document.getElementById("mode");
+  var countEl = document.getElementById("count");
+  var countLabel = document.getElementById("countLabel");
+  var metaEl = document.getElementById("meta");
+  var resultEl = document.getElementById("result");
+  var listNameEl = document.getElementById("listName");
+  var savedListEl = document.getElementById("savedList");
+
+  modeEl.addEventListener("change", function(){
+    countLabel.textContent = modeEl.value === "groups" ? "Aantal groepen" : "Personen per groep";
+  });
+
+  function parseNames(raw){
+    return raw.split(/[\n,]+/).map(function(s){return s.trim();}).filter(Boolean);
+  }
+  function shuffle(a){
+    for (var i=a.length-1; i>0; i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var t=a[i]; a[i]=a[j]; a[j]=t;
+    }
+    return a;
+  }
+
+  function distribute(){
+    var names = shuffle(parseNames(namesEl.value));
+    resultEl.innerHTML = "";
+    if (names.length === 0){ metaEl.innerHTML = "Voer eerst wat namen in."; return; }
+
+    var n = Math.max(1, parseInt(countEl.value) || 1);
+    var numGroups = modeEl.value === "groups"
+      ? Math.min(n, names.length)
+      : Math.ceil(names.length / n);
+
+    var groups = [];
+    for (var g=0; g<numGroups; g++) groups.push([]);
+    names.forEach(function(name, i){ groups[i % numGroups].push(name); });
+
+    metaEl.innerHTML = names.length + " personen verdeeld over " + numGroups + " groep" + (numGroups>1?"en":"") + ".";
+
+    groups.forEach(function(members, idx){
+      var div = document.createElement("div");
+      div.className = "group c" + (idx % 7);
+      var h = document.createElement("h3");
+      h.textContent = "Groep " + (idx+1) + " (" + members.length + ")";
+      div.appendChild(h);
+      members.forEach(function(m){
+        var row = document.createElement("div");
+        row.className = "member";
+        row.textContent = m;
+        div.appendChild(row);
+      });
+      resultEl.appendChild(div);
+    });
+  }
+
+  function getSaved(){
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+    catch(e){ return {}; }
+  }
+  function setSaved(obj){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); } catch(e){}
+  }
+  function renderSaved(){
+    var saved = getSaved();
+    var keys = Object.keys(saved);
+    savedListEl.innerHTML = "";
+    if (keys.length === 0){
+      savedListEl.innerHTML = '<span class="empty">Nog geen opgeslagen lijsten.</span>';
+      return;
+    }
+    keys.forEach(function(name){
+      var chip = document.createElement("span");
+      chip.className = "chip";
+      var load = document.createElement("span");
+      load.className = "load";
+      load.textContent = name;
+      load.title = "Klik om te laden";
+      load.addEventListener("click", function(){
+        namesEl.value = saved[name];
+        listNameEl.value = name;
+      });
+      var del = document.createElement("button");
+      del.textContent = "×";
+      del.title = "Verwijder lijst";
+      del.addEventListener("click", function(){
+        var s = getSaved();
+        delete s[name];
+        setSaved(s);
+        renderSaved();
+      });
+      chip.appendChild(load);
+      chip.appendChild(del);
+      savedListEl.appendChild(chip);
+    });
+  }
+
+  document.getElementById("go").addEventListener("click", distribute);
+  document.getElementById("save").addEventListener("click", function(){
+    var name = (listNameEl.value || "").trim();
+    var content = namesEl.value.trim();
+    if (!name){ alert("Geef de klaslijst eerst een naam."); return; }
+    if (!content){ alert("Er zijn geen namen om op te slaan."); return; }
+    var saved = getSaved();
+    saved[name] = content;
+    setSaved(saved);
+    renderSaved();
+  });
+
+  renderSaved();
+})();
+</script>
+</body>
+</html>
